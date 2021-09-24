@@ -11,17 +11,22 @@ interface Channels {
 let channels: Channels = {};
 
 function getPosts(time: string) {
-    return reddit_client.getSubreddit(config.subreddit).search({ query: config.keyword, time: time });
+    return reddit_client
+        .getSubreddit(config.subreddit)
+        .search({ query: config.keyword, time: time })
+        .filter((x: any) => x.title.toLowerCase().includes(config.keyword));
 }
 
 async function sendPosts() {
     let posts = await getPosts("hour");
-    posts = posts.map((post) => "https://reddit.com" + post.permalink);
-    Object.values(channels).forEach(channel => {
-        posts.forEach(post => {
-            channel.send(post.link);
+    posts = posts.map((post) => "https://reddit.com" + post.permalink).join(" ");
+    if (posts.length > 0) {
+        Object.values(channels).forEach(channel => {
+            posts.forEach(post => {
+                channel.send(post.link);
+            });
         });
-    });
+    }
 }
 
 // Create a new client instance
@@ -46,18 +51,22 @@ client.on('interactionCreate', async (interaction: Interaction) => {
         } else {
             interaction.reply("Channel not set")
         }
-
     } else if (commandName === "getlasthour") {
         let posts = await getPosts("hour");
         if (posts.length > 0) {
+            posts = posts.map((post) => "https://reddit.com" + post.permalink).join(" ");
             interaction.reply(posts);
         } else {
             interaction.reply("None in the last hour");
         }
     } else if (commandName === "getlastday") {
         let posts = await getPosts("day");
-        posts = posts.map((post) => "https://reddit.com" + post.permalink).join(" ");
-        interaction.reply(posts.join(" "));
+        if (posts.length > 0) {
+            posts = posts.map((post) => "https://reddit.com" + post.permalink).join(" ");
+            interaction.reply(posts);
+        } else {
+            interaction.reply("None in the last day");
+        }
     }
 });
 
