@@ -1,4 +1,4 @@
-import { Interaction, Permissions, TextBasedChannels } from "discord.js";
+import { GuildMember, Interaction, Permissions, TextBasedChannels } from "discord.js";
 import Config from "./interfaces/config";
 import reddit_client from "./reddit_client";
 
@@ -43,8 +43,13 @@ client.on('interactionCreate', async (interaction: Interaction) => {
     const commandName = interaction.commandName;
 
     if (commandName === 'setchannel') {
-        channels[interaction.guildId] = interaction.channel; //Add channel to list 
-        interaction.reply("Channel added");
+        const member = interaction.member as GuildMember;
+        if (member.permissions.has("ADMINISTRATOR")) {
+            channels[interaction.guildId] = interaction.channel; //Add channel to list 
+            interaction.reply("Channel added");
+        } else {
+            interaction.reply("Only admin can do this")
+        }
     } else if (commandName === "getchannel") {
         if (channels[interaction.guildId]) {
             interaction.reply(channels[interaction.guildId].id);
