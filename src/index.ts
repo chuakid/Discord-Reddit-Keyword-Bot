@@ -1,4 +1,4 @@
-import { Message, Permissions, TextBasedChannels } from "discord.js";
+import { Interaction, Permissions, TextBasedChannels } from "discord.js";
 import Config from "./interfaces/config";
 import reddit_client from "./reddit_client";
 
@@ -25,7 +25,7 @@ async function sendPosts() {
 }
 
 // Create a new client instance
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 
 client.once('ready', async () => {
     console.log('Ready!');
@@ -33,30 +33,32 @@ client.once('ready', async () => {
 });
 
 
-client.on('messageCreate', async (message: Message) => {
-    if (message.member.permissions.has(Permissions.FLAGS.ADMINISTRATOR) && message.content === "/setBotChannel") {
-        channels[message.guildId] = message.channel; //Add channel to list 
-        message.channel.send("Channel added");
-    }
-    if (message.content === "/getlasthour") {
+client.on('interactionCreate', async (interaction: Interaction) => {
+    if (!interaction.isCommand()) return
+    const commandName = interaction.commandName;
+
+    if (commandName === 'setchannel') {
+        channels[interaction.guildId] = interaction.channel; //Add channel to list 
+        interaction.reply("Channel added");
+    } else if (commandName === "getchannel") {
+        if (channels[interaction.guildId]) {
+            interaction.reply(channels[interaction.guildId].id);
+        } else {
+            interaction.reply("Channel not set")
+        }
+
+    } else if (commandName === "getlasthour") {
         let posts = await getPosts("hour");
         if (posts.length > 0) {
-            posts = posts.map((post) => "https://reddit.com" + post.permalink);
-            posts.forEach(post => {
-                message.channel.send(post);
-            });
+            interaction.reply(posts);
         } else {
-            message.channel.send("None in the last hour");
+            interaction.reply("None in the last hour");
         }
-    }
-    if (message.content === "/getlastday") {
+    } else if (commandName === "getlastday") {
         let posts = await getPosts("day");
-        posts = posts.map((post) => "https://reddit.com" + post.permalink);
-        posts.forEach(post => {
-            message.channel.send(post);
-        });
+        posts = posts.map((post) => "https://reddit.com" + post.permalink).join(" ");
+        interaction.reply(posts.join(" "));
     }
-
 });
 
 
