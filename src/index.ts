@@ -22,9 +22,7 @@ async function sendPosts() {
     posts = posts.map((post) => "https://reddit.com" + post.permalink).join(" ");
     if (posts.length > 0) {
         Object.values(channels).forEach(channel => {
-            posts.forEach(post => {
-                channel.send(post.link);
-            });
+            channel.send(posts);
         });
     }
 }
